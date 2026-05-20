@@ -1,10 +1,11 @@
 from playwright.sync_api import sync_playwright
+import time
 
 print("PLAYWRIGHT WORKING")
 
 with sync_playwright() as p:
 
-    browser = p.chromium.launch()
+    browser = p.chromium.launch(headless=True)
 
     page = browser.new_page()
 
@@ -13,3 +14,6 @@ with sync_playwright() as p:
     print(page.title())
 
     browser.close()
+
+while True:
+    time.sleep(60)
