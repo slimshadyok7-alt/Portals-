@@ -1,0 +1,17 @@
+import requests
+from bs4 import BeautifulSoup
+
+def get_new_posts():
+    url = "https://xbaaz.com/#_"
+
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+
+    r = requests.get(url, headers=headers)
+
+    soup = BeautifulSoup(r.text, "html.parser")
+
+    posts = []
+
+    videos = soup.fi

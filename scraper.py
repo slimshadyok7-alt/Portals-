@@ -1,63 +1,43 @@
-import requests
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
-from database import conn, cursor
+import time
 
-SOURCE = "https://YOUR_SOURCE_SITE.com"
+def get_new_posts():
 
-def scrape():
+    options = Options()
 
-    html = requests.get(SOURCE).text
+    options.binary_location = "/data/data/com.termux/files/usr/bin/chromium"
 
-    soup = BeautifulSoup(html, "html.parser")
+    options.add_argument("--headless=new")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
 
-    posts = soup.find_all("a")
+    driver = webdriver.Chrome(options=options)
 
-    for post in posts:
+    url = "https://xbaaz.com/#_"
 
-        try:
+    driver.get(url)
 
-            url = post.get("href")
+    time.sleep(5)
 
-            if not url:
-                continue
+    soup = BeautifulSoup(driver.page_source, "html.parser")
 
-            if not url.startswith("http"):
-                continue
+    driver.quit()
 
-            cursor.execute(
-                "SELECT * FROM posts WHERE post_url=?",
-                (url,)
-            )
+    posts = []
 
-            exists = cursor.fetchone()
+    links = soup.find_all("a")
 
-            if exists:
-                continue
+    for link in links[:20]:
 
-            title = post.text.strip()
+        href = link.get("href")
 
-            thumbnail = "https://example.com/thumb.jpg"
+        if href and "http" in href:
 
-            video_url = url
+            posts.append({
+                "title": link.text.strip() or "Video",
+                "url": href
+            })
 
-            cursor.execute("""
-            INSERT INTO posts (
-                post_url,
-                title,
-                thumbnail,
-                video_url
-            ) VALUES (?, ?, ?, ?)
-            """, (
-                url,
-                title,
-                thumbnail,
-                video_url
-            ))
-
-            conn.commit()
-
-            print("NEW:", title)
-
-        except Exception as e:
-
-            print(e)
+    return posts

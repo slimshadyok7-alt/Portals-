@@ -1,81 +1,37 @@
-from flask import Flask
-from threading import Thread
-import os
+from scraper import get_new_posts
+from downloader import download_video
+from uploader_bot import upload_to_diskwala
+from telegram_bot import send_post
+
+import asyncio
 import time
 
-from database import conn, cursor
-from scraper import scrape
-from downloader import download_video
-from uploader import upload
-from telegram_bot import post_telegram
 
-app = Flask(__name__)
+async def run_bot():
 
-@app.route("/")
-def home():
-    return "Bot running"
+    posts = get_new_posts()
 
-def run_web():
+    for post in posts:
 
-    port = int(os.environ.get("PORT", 10000))
+        title = post["title"]
+        url = post["url"]
 
-    app.run(host="0.0.0.0", port=port)
+        print("DOWNLOADING...")
+        video_path = download_video(url, "video.mp4")
 
-Thread(target=run_web).start()
+        print("UPLOADING...")
+        diskwala_link = await upload_to_diskwala(video_path)
+
+        print("POSTING...")
+        await send_post(title, diskwala_link)
+
+        print("DONE")
+
 
 while True:
 
-    try:
+    asyncio.run(run_bot())
 
-        scrape()
-
-        cursor.execute("""
-        SELECT
-        post_url,
-        title,
-        thumbnail,
-        video_url
-        FROM posts
-        WHERE posted=0
-        """)
-
-        posts = cursor.fetchall()
-
-        for post in posts:
-
-            post_url, title, thumbnail, video_url = post
-
-            print("PROCESSING:", title)
-
-            filepath = download_video(
-                video_url,
-                "video.mp4"
-            )
-
-            uploaded_link = upload(filepath)
-
-            post_telegram(
-                title,
-                thumbnail,
-                uploaded_link
-            )
-
-            cursor.execute("""
-            UPDATE posts
-            SET posted=1,
-            uploaded_link=?
-            WHERE post_url=?
-            """, (
-                uploaded_link,
-                post_url
-            ))
-
-            conn.commit()
-
-            print("DONE:", title)
-
-    except Exception as e:
-
-        print(e)
+    print("WAITING 5 MINUTES...")
 
     time.sleep(300)

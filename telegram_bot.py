@@ -1,17 +1,20 @@
 from telegram import Bot
 
 BOT_TOKEN = "8850623367:AAEipn5gBXE6PbpUbPZH-3yCeKkQQm-1d-U"
+CHANNEL_ID = "@summerrrrfiles"
 
-CHANNEL = "@summerrrrfiles"
+bot = Bot(token=BOT_TOKEN)
 
 
+async def send_post(title, link):
 
-def post_telegram(title, thumbnail, link):
+    text = f"""
+🎬 {title}
 
-    text = f"{title}\n\n{link}"
+🔗 {link}
+"""
 
-    bot.send_photo(
-        chat_id=CHANNEL,
-        photo=thumbnail,
-        caption=text
+    await bot.send_message(
+        chat_id=CHANNEL_ID,
+        text=text
     )
